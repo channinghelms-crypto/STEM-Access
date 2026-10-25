@@ -84,7 +84,7 @@ summary { cursor: pointer; color: var(--ink); font-weight: 600; }
 </div>
 
 <script>
-// ===================== DATA =====================
+
 
 
 const categories = ["biomedical", "computer science", "engineering", "environmental",
@@ -214,15 +214,12 @@ const defaultStudent = { cats: ["biomedical"], grade: 10, county: "Lake", myLat:
   myLon: null, car: false, miles: 10, budget: 0, tech: 2, hours: 5 };
 
 
-// ===================== VARIABLES =====================
-
 const form = byId("f");
 let student = loadStudent();   
 let programs = [];            
 let loadedFromFile = false;
 
 
-// ===================== SMALL HELPERS =====================
 
 function byId(id) {
   return document.getElementById(id);
@@ -275,7 +272,6 @@ function cleanProgram(row) {
 }
 
 
-// ===================== LOCATION AND DISTANCE =====================
 
 
 function getHome(s) {
@@ -318,8 +314,6 @@ function travelLimit(s) {
   return Math.min(s.miles, NO_CAR_LIMIT);
 }
 
-
-// ===================== BARRIERS AND SCORE =====================
 
 function isEligible(program, s) {
   if (program.gradeMin !== null && s.grade < program.gradeMin) return false;
