@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>STEMAccess</title>
-<!-- Leaflet: free map library (needs internet). Map pictures come from OpenStreetMap. -->
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -80,90 +80,19 @@ summary { cursor: pointer; color: var(--ink); font-weight: 600; }
       <form id="f" onsubmit="return false">
         <fieldset><legend>I'm interested in</legend><div id="cats"></div></fieldset>
 
-        <label for="grade">My grade this school year</label>
-        <select id="grade" name="grade"></select>
-
-        <label for="county">My county</label>
-        <select id="county" name="county"></select>
-        <button type="button" id="geo">Use my location instead</button>
-        <p class="hint" id="where"></p>
-
-        <label class="chk"><input type="checkbox" name="car"> Someone can drive me
-          (or I drive)</label>
-
-        <label for="miles">Farthest I can travel: <output id="mo"></output></label>
-        <input id="miles" name="miles" type="range" min="1" max="60">
-
-        <label for="budget">What I can spend</label>
-        <select id="budget" name="budget"></select>
-
-        <label for="tech">Tech I can use</label>
-        <select id="tech" name="tech"></select>
-
-        <label for="hours">Free hours per week: <output id="ho"></output></label>
-        <input id="hours" name="hours" type="range" min="1" max="40">
-
-        <button type="button" id="ex">Reset to example student</button>
-      </form>
-    </section>
-
-    <div class="stack">
-      <section class="panel">
-        <h2>Your Access Score</h2>
-        <div class="top">
-          <svg class="gauge" viewBox="0 0 120 120">
-            <circle class="track" cx="60" cy="60" r="52"/>
-            <circle class="arc" id="arc" cx="60" cy="60" r="52" transform="rotate(-90 60 60)"/>
-            <text class="big" id="gnum" x="60" y="62" text-anchor="middle">0%</text>
-            <text class="small" x="60" y="77" text-anchor="middle">Access Score</text>
-          </svg>
-          <ul id="bars"></ul>
-        </div>
-      </section>
-
-      <section class="panel">
-        <h2>Map</h2>
-        <div id="map"></div>
-        <p class="hint">
-          <span class="dot" style="background: var(--blue)"></span> You &nbsp;
-          <span class="dot" style="background: var(--cost)"></span> No barriers &nbsp;
-          <span class="dot" style="background: var(--transport)"></span> At least one barrier
-          &nbsp; The circle shows how far you can travel. Click a dot for details.
-        </p>
-      </section>
-
-      <section class="panel">
-        <h2>Programs for you</h2>
-        <ul id="list"></ul>
-        <p id="src"></p>
-      </section>
-
-      <details>
-        <summary>How the score works</summary>
-        <p>Only programs that match your interests and your grade are counted. For each barrier
-          type, the sub-score is the share of those programs with no barrier of that type for
-          you. The Access Score is a weighted average: Transportation 35%, Cost 25%, Time 25%,
-          Tech 15%. Distance is a straight line from your county seat (or your location).
-          Without a ride, the farthest you can travel is 10 miles. If a program's cost, hours
-          or location isn't confirmed yet, it doesn't count as a barrier and gets a gray tag.
-          Programs are listed by how few barriers you face.</p>
-      </details>
-    </div>
   </main>
 </div>
 
 <script>
 // ===================== DATA =====================
 
-// Same category words as the spreadsheet
+
 const categories = ["biomedical", "computer science", "engineering", "environmental",
   "math", "other STEM"];
 
-// techNames[1], [2], [3] match the tech_needed column (index 0 is not used)
 const techNames = ["", "a phone", "a computer with a browser",
   "a laptop with installed software"];
 
-// The four barriers: what they're called, their symbol, and how much they count
 const barrierTypes = [
   { key: "cost", label: "Cost", symbol: "&#9679;", color: "var(--cost)", weight: 0.25 },
   { key: "transport", label: "Transportation", symbol: "&#9632;", color: "var(--transport)",
@@ -172,10 +101,9 @@ const barrierTypes = [
   { key: "time", label: "Time", symbol: "&#9670;", color: "var(--time)", weight: 0.25 }
 ];
 
-const NO_CAR_LIMIT = 10;  // miles you can go by bus, bike or walking
-const CIRCLE = 326.73;    // length of the score circle's outline
+const NO_CAR_LIMIT = 10;  
+const CIRCLE = 326.73;   
 
-// Florida counties: [name, latitude, longitude] of the county seat (approximate)
 const counties = [
   ["Alachua", 29.65, -82.32], ["Baker", 30.28, -82.12], ["Bay", 30.16, -85.66],
   ["Bradford", 29.94, -82.11], ["Brevard", 28.25, -80.73], ["Broward", 26.12, -80.14],
@@ -202,9 +130,7 @@ const counties = [
   ["Washington", 30.78, -85.54]
 ];
 
-// All 75 programs from the spreadsheet, built into the page so it works as one file.
-// To update them: edit the spreadsheet, make a new programs.json with csv-to-json.html,
-// and put it next to this file. If programs.json is there, the app uses it instead.
+
 const builtInPrograms = [
   {"name": "Florida State University Young Scholars Program", "category": "other STEM", "cost_usd": 0, "format": "in-person", "city": "Tallahassee", "lat": 30.4419, "lon": -84.2985, "hours_per_week": 40, "tech_needed": 1, "grade_min": 10, "grade_max": 11, "deadline": "2027 not yet posted; 2026 cycle was Feb 15 (expected similar)", "url": "https://ysp.osta.fsu.edu/"},
   {"name": "UF Student Science Training Program (SSTP)", "category": "other STEM", "cost_usd": 5500, "format": "in-person", "city": "Gainesville", "lat": 29.6436, "lon": -82.3549, "hours_per_week": 40, "tech_needed": 1, "grade_min": 11, "grade_max": 11, "deadline": "2027 not yet posted; 2026 applications were due Mar 18, 2026 (rolling review until full)", "url": "https://cpet.ufl.edu/students/uf-cpet-summer-programs/student-science-training-program/"},
@@ -283,7 +209,7 @@ const builtInPrograms = [
   {"name": "Code/Art Student Board & Mentorship Tracks", "category": "computer science", "format": "in-person", "tech_needed": 1}
 ];
 
-// The example student (also used for the Reset button)
+
 const defaultStudent = { cats: ["biomedical"], grade: 10, county: "Lake", myLat: null,
   myLon: null, car: false, miles: 10, budget: 0, tech: 2, hours: 5 };
 
@@ -291,8 +217,8 @@ const defaultStudent = { cats: ["biomedical"], grade: 10, county: "Lake", myLat:
 // ===================== VARIABLES =====================
 
 const form = byId("f");
-let student = loadStudent();   // the answers from the form
-let programs = [];             // every program, cleaned up by cleanProgram()
+let student = loadStudent();   
+let programs = [];            
 let loadedFromFile = false;
 
 
@@ -306,14 +232,14 @@ function percent(x) {
   return Math.round(x * 100);
 }
 
-// Makes text safe to put inside HTML (so "&" or "<" in a name can't break the page)
+
 function escapeHTML(text) {
   if (text === null || text === undefined) return "";
   return String(text).replaceAll("&", "&amp;").replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
 
-// Turns a cell into a number, or null if it's blank or not a number
+
 function toNumber(value) {
   if (value === null || value === undefined || value === "") return null;
   const number = Number(value);
@@ -321,7 +247,7 @@ function toNumber(value) {
   return number;
 }
 
-// Turns one row from programs.json into the shape this app uses
+
 function cleanProgram(row) {
   const program = {
     name: row.name || "Unnamed program",
@@ -341,7 +267,7 @@ function cleanProgram(row) {
   if (!categories.includes(program.category)) {
     program.category = "other STEM";
   }
-  // only keep real web links
+ 
   if (row.url && (row.url.startsWith("http://") || row.url.startsWith("https://"))) {
     program.url = row.url;
   }
@@ -351,7 +277,7 @@ function cleanProgram(row) {
 
 // ===================== LOCATION AND DISTANCE =====================
 
-// Where the student is: their own location if they shared it, otherwise their county seat
+
 function getHome(s) {
   if (s.myLat !== null && s.myLat !== undefined) {
     return [s.myLat, s.myLon];
@@ -364,7 +290,7 @@ function getHome(s) {
   return null;
 }
 
-// Straight-line miles between two points on Earth (haversine formula)
+
 function milesBetween(lat1, lon1, lat2, lon2) {
   const toRad = Math.PI / 180;
   const dLat = (lat2 - lat1) * toRad;
@@ -374,19 +300,19 @@ function milesBetween(lat1, lon1, lat2, lon2) {
   return 2 * 3958.8 * Math.asin(Math.sqrt(a));
 }
 
-// Virtual and hybrid programs can be done from home
+
 function needsTravel(program) {
   return program.format !== "virtual" && program.format !== "hybrid";
 }
 
-// Miles from the student to the program, or null if we don't know
+
 function getDistance(program, s) {
   const home = getHome(s);
   if (home === null || program.lat === null || program.lon === null) return null;
   return milesBetween(home[0], home[1], program.lat, program.lon);
 }
 
-// Without a ride, students can't go farther than NO_CAR_LIMIT miles
+
 function travelLimit(s) {
   if (s.car) return s.miles;
   return Math.min(s.miles, NO_CAR_LIMIT);
@@ -401,7 +327,6 @@ function isEligible(program, s) {
   return true;
 }
 
-// Returns a list like ["cost", "time"]. Unknown values never count as a barrier.
 function getBarriers(program, s) {
   const list = [];
   if (program.cost !== null && program.cost > s.budget) list.push("cost");
@@ -414,7 +339,7 @@ function getBarriers(program, s) {
   return list;
 }
 
-// Things the spreadsheet doesn't say yet (shown as gray tags)
+
 function getUnknowns(program, s) {
   const list = [];
   if (program.cost === null) list.push("Cost not confirmed");
@@ -429,9 +354,9 @@ function getUnknowns(program, s) {
   return list;
 }
 
-// Goes through every program and works out the Access Score for student s
+
 function calculateScore(s) {
-  // 1. find the programs that match the student's interests and grade
+  
   const matches = [];
   for (const program of programs) {
     if (s.cats.includes(program.category) && isEligible(program, s)) {
@@ -439,7 +364,7 @@ function calculateScore(s) {
     }
   }
 
-  // 2. count how many of them have NO barrier of each type
+  
   const clear = { cost: 0, transport: 0, tech: 0, time: 0 };
   for (const program of matches) {
     const barriers = getBarriers(program, s);
@@ -448,7 +373,7 @@ function calculateScore(s) {
     }
   }
 
-  // 3. turn the counts into sub-scores and a weighted total
+  
   const parts = {};
   let total = 0;
   for (const type of barrierTypes) {
@@ -463,14 +388,14 @@ function calculateScore(s) {
 }
 
 
-// ===================== SHOWING THINGS ON THE PAGE =====================
+
 
 function chipHTML(symbol, text, color) {
   return '<span class="chip" style="border-color:' + color + '"><b style="color:' + color +
     '">' + symbol + "</b> " + escapeHTML(text) + "</span>";
 }
 
-// The text on a barrier chip, for example "Costs $450"
+
 function barrierText(key, row) {
   const p = row.program;
   if (key === "cost") return "Costs $" + p.cost;
@@ -481,7 +406,6 @@ function barrierText(key, row) {
   return p.hours + " hrs/week is more than you have";
 }
 
-// The HTML for one program in the list
 function programHTML(row) {
   const p = row.program;
 
@@ -525,12 +449,11 @@ function programHTML(row) {
   return html + "</li>";
 }
 
-// Redraws everything on the right side of the page
+
 function render() {
   const result = calculateScore(student);
   const score = result.total;
 
-  // build one row per matching program, then sort: fewest barriers first
   const rows = [];
   for (const program of result.matches) {
     const row = {
@@ -550,17 +473,17 @@ function render() {
     return (a.distance || 0) - (b.distance || 0);
   });
 
-  // --- labels next to the sliders ---
+
   byId("mo").textContent = travelLimit(student) + " miles" +
     (student.car ? "" : " (bus, bike or walking)");
   byId("ho").textContent = student.hours + " hours";
   byId("where").textContent = student.myLat !== null ? "Using your location." : "";
 
-  // --- score circle ---
+  
   byId("gnum").textContent = percent(score) + "%";
   byId("arc").style.strokeDashoffset = CIRCLE * (1 - score);
 
-  // --- score bars ---
+  
   let barsHTML = "";
   for (const type of barrierTypes) {
     const value = percent(result.parts[type.key]);
@@ -574,7 +497,7 @@ function render() {
   }
   byId("bars").innerHTML = barsHTML;
 
-  // --- program list ---
+  
   let listHTML = "";
   for (const row of rows) {
     listHTML += programHTML(row);
@@ -593,18 +516,18 @@ function render() {
 }
 
 
-// ===================== MAP =====================
 
-let map = null;        // the Leaflet map
-let mapLayer = null;   // a group holding all the dots, so we can clear them each time
-let lastPoints = "";   // the dots we last zoomed to (so the map doesn't jump around)
+
+let map = null;        
+let mapLayer = null;   
+let lastPoints = "";  
 
 function setupMap() {
-  if (typeof L === "undefined") {   // Leaflet didn't load, probably no internet
+  if (typeof L === "undefined") {  
     byId("map").textContent = "The map needs an internet connection to load.";
     return;
   }
-  map = L.map("map").setView([28.1, -82.4], 6);   // start on all of Florida
+  map = L.map("map").setView([28.1, -82.4], 6); 
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 18,
     attribution: "&copy; OpenStreetMap contributors"
@@ -612,7 +535,7 @@ function setupMap() {
   mapLayer = L.layerGroup().addTo(map);
 }
 
-// The text that pops up when you click a program's dot
+
 function popupHTML(row) {
   const p = row.program;
   let html = "<b>" + escapeHTML(p.name) + "</b><br>" + escapeHTML(p.city);
@@ -633,19 +556,19 @@ function popupHTML(row) {
   return html;
 }
 
-// Draws the student and every matching program that has a location
+
 function drawMap(rows) {
   if (map === null) return;
   mapLayer.clearLayers();
   const points = [];
 
-  // the student: a blue dot plus a circle for how far they can travel
+  
   const home = getHome(student);
   if (home !== null) {
     let label = "You (" + student.county + " County seat)";
     if (student.myLat !== null) label = "You (your location)";
     L.circle(home, {
-      radius: travelLimit(student) * 1609.34,   // miles to meters
+      radius: travelLimit(student) * 1609.34, 
       color: "#1d4ed8", weight: 1, fillOpacity: 0.07
     }).addTo(mapLayer);
     L.circleMarker(home, {
@@ -654,10 +577,9 @@ function drawMap(rows) {
     points.push(home);
   }
 
-  // the programs: green = no barriers, orange = at least one barrier
+ 
   for (const row of rows) {
-    const p = row.program;
-    if (p.lat === null || p.lon === null) continue;   // virtual, or no location yet
+    const p = row.program; 
     let color = "#15803d";
     if (row.barriers.length > 0) color = "#c2410c";
     L.circleMarker([p.lat, p.lon], {
@@ -666,7 +588,7 @@ function drawMap(rows) {
     points.push([p.lat, p.lon]);
   }
 
-  // zoom to fit all the dots, but only when the dots change (not on every slider move)
+
   const pointsText = JSON.stringify(points);
   if (points.length > 0 && pointsText !== lastPoints) {
     map.fitBounds(points, { padding: [30, 30], maxZoom: 11 });
@@ -675,9 +597,7 @@ function drawMap(rows) {
 }
 
 
-// ===================== THE FORM =====================
 
-// Fills a dropdown with options. values and labels are lists of the same length.
 function addOptions(selectId, values, labels) {
   let html = "";
   for (let i = 0; i < values.length; i++) {
@@ -687,7 +607,7 @@ function addOptions(selectId, values, labels) {
   byId(selectId).innerHTML = html;
 }
 
-// Copies the student's answers into the form
+
 function fillForm() {
   form.miles.max = student.car ? 60 : NO_CAR_LIMIT;
   form.grade.value = student.grade;
@@ -702,7 +622,7 @@ function fillForm() {
   }
 }
 
-// Reads the form whenever something changes
+
 function readForm(event) {
   student.grade = Number(form.grade.value);
   student.miles = Number(form.miles.value);
@@ -712,7 +632,7 @@ function readForm(event) {
   student.car = form.car.checked;
   student.county = form.county.value;
   if (student.county !== "") {
-    student.myLat = null;   // picking a county replaces "use my location"
+    student.myLat = null;   
     student.myLon = null;
   }
   student.cats = [];
@@ -720,11 +640,11 @@ function readForm(event) {
     if (box.checked) student.cats.push(box.value);
   }
   saveStudent();
-  if (event.target === form.car) fillForm();  // the miles slider's max changes
+  if (event.target === form.car) fillForm();  
   render();
 }
 
-// Remembers the answers in this browser (localStorage can fail, so use try/catch)
+
 function saveStudent() {
   try {
     localStorage.setItem("stemaccess2", JSON.stringify(student));
@@ -740,9 +660,8 @@ function loadStudent() {
 }
 
 
-// ===================== START THE APP =====================
 
-// build the dropdowns
+
 addOptions("grade", [9, 10, 11, 12], ["9th", "10th", "11th", "12th"]);
 addOptions("budget", [0, 50, 500, 99999],
   ["Free programs only", "Up to $50", "Up to $500", "Any cost"]);
@@ -756,7 +675,7 @@ for (const county of counties) {
 }
 addOptions("county", countyNames, countyLabels);
 
-// build the checkboxes
+
 let catsHTML = "";
 for (const cat of categories) {
   const label = cat[0].toUpperCase() + cat.slice(1);
@@ -765,7 +684,7 @@ for (const cat of categories) {
 }
 byId("cats").innerHTML = catsHTML;
 
-// listen for changes
+
 form.addEventListener("input", readForm);
 form.addEventListener("change", readForm);
 
@@ -792,7 +711,7 @@ byId("ex").addEventListener("click", function () {
   render();
 });
 
-// show the built-in programs, then check for a newer programs.json
+
 setupMap();
 for (const row of builtInPrograms) {
   programs.push(cleanProgram(row));
@@ -814,7 +733,7 @@ fetch("programs.json")
     render();
   })
   .catch(function () {
-    // no programs.json, so keep the built-in list
+    
   });
 </script>
 </body>
