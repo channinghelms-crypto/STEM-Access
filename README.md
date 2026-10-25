@@ -40,14 +40,13 @@ select { padding: 10px; border-radius: 8px; border: 1px solid var(--line); font:
 button { font: inherit; padding: 10px 16px; margin-top: 16px; border-radius: 8px;
   border: 2px solid var(--blue); background: white; color: var(--blue); font-weight: 600;
   cursor: pointer; }
-.hint, #msg, #src, #big, .meta { color: var(--muted); }
+.hint, #src, .meta { color: var(--muted); }
 .hint { margin: 4px 0 0; font-size: 0.86rem; }
 .top { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
 .gauge { width: 170px; height: 170px; }
 .track { fill: none; stroke: var(--line); stroke-width: 10; }
-.arc, .arc2 { fill: none; stroke: var(--blue); stroke-width: 10; stroke-linecap: round;
+.arc { fill: none; stroke: var(--blue); stroke-width: 10; stroke-linecap: round;
   stroke-dasharray: 326.73; stroke-dashoffset: 326.73; transition: stroke-dashoffset 0.7s; }
-.arc2 { opacity: 0.3; }
 .big { font-size: 30px; font-weight: 800; fill: var(--ink); }
 .small { font-size: 8.5px; fill: var(--muted); }
 #bars { flex: 1; min-width: 230px; }
@@ -57,8 +56,6 @@ button { font: inherit; padding: 10px 16px; margin-top: 16px; border-radius: 8px
 .bar { height: 10px; background: var(--line); border-radius: 5px; margin-top: 5px;
   overflow: hidden; }
 .bar i { display: block; height: 100%; }
-.whatif { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
-#wi { margin: 10px 0 2px; font-size: 1.3rem; font-weight: 800; }
 #list li { padding: 14px 0; border-top: 1px solid var(--line); }
 .meta { margin: 2px 0 8px; font-size: 0.9rem; }
 .chip { display: inline-block; margin: 0 6px 6px 0; padding: 2px 10px; border: 1.5px solid;
@@ -116,19 +113,11 @@ summary { cursor: pointer; color: var(--ink); font-weight: 600; }
         <div class="top">
           <svg class="gauge" viewBox="0 0 120 120">
             <circle class="track" cx="60" cy="60" r="52"/>
-            <circle class="arc2" id="arc2" cx="60" cy="60" r="52" transform="rotate(-90 60 60)"/>
             <circle class="arc" id="arc" cx="60" cy="60" r="52" transform="rotate(-90 60 60)"/>
             <text class="big" id="gnum" x="60" y="62" text-anchor="middle">0%</text>
             <text class="small" x="60" y="77" text-anchor="middle">Access Score</text>
           </svg>
           <ul id="bars"></ul>
-        </div>
-        <p id="msg"></p>
-        <div class="whatif">
-          <h2>What if...</h2>
-          <div id="wif"></div>
-          <p id="wi"></p>
-          <p id="big"></p>
         </div>
       </section>
 
@@ -183,14 +172,6 @@ const barrierTypes = [
   { key: "time", label: "Time", symbol: "&#9670;", color: "var(--time)", weight: 0.25 }
 ];
 
-// The "What if..." checkboxes
-const whatIfs = [
-  { key: "car", text: "a ride (up to 30 miles)" },
-  { key: "laptop", text: "a laptop that can install software" },
-  { key: "time", text: "10 more free hours a week" },
-  { key: "money", text: "a budget of up to $500" }
-];
-
 const NO_CAR_LIMIT = 10;  // miles you can go by bus, bike or walking
 const CIRCLE = 326.73;    // length of the score circle's outline
 
@@ -221,31 +202,85 @@ const counties = [
   ["Washington", 30.78, -85.54]
 ];
 
-// Used only when programs.json can't be loaded (like when you double-click the file)
-const samplePrograms = [
-  { name: "UF Student Science Training Program (SSTP)", category: "other STEM",
-    cost_usd: 5500, format: "in-person", city: "Gainesville", lat: 29.6436, lon: -82.3549,
-    hours_per_week: 40, tech_needed: 1, grade_min: 11, grade_max: 11,
-    deadline: "2026 deadline was Mar 18", url: "https://cpet.ufl.edu" },
-  { name: "Orlando Health Teen Volunteer Program", category: "biomedical", cost_usd: 0,
-    format: "in-person", city: "Orlando", lat: 28.5242, lon: -81.3736, hours_per_week: 4,
-    tech_needed: 1, grade_min: 10, grade_max: 12,
-    deadline: "Summer session: apply by Mar 15", url: "https://www.orlandohealth.com" },
-  { name: "Girls Who Code Summer Programs", category: "computer science", cost_usd: 0,
-    format: "virtual", hours_per_week: 20, tech_needed: 2, grade_min: 9, grade_max: 11,
-    deadline: "2026: Feb 25 early, Apr 10 general", url: "https://girlswhocode.com" },
-  { name: "Orlando Science Center Catalyst Youth Volunteers", category: "other STEM",
-    cost_usd: 0, format: "in-person", city: "Orlando", lat: 28.5726, lon: -81.3677,
-    hours_per_week: 4, tech_needed: 1, grade_min: 8, grade_max: 12,
-    deadline: "Opens twice a year", url: "https://www.osc.org/support/volunteer/" },
-  { name: "Mayo Clinic SPARK Research Mentorship", category: "biomedical", cost_usd: 0,
-    format: "in-person", city: "Jacksonville", lat: 30.264, lon: -81.443, hours_per_week: 25,
-    tech_needed: 1, grade_min: 10, grade_max: 11, deadline: "Nov 1 - Dec 31",
-    url: "https://college.mayo.edu" },
-  { name: "Hutton Junior Fisheries Biology Program", category: "environmental", cost_usd: 0,
-    format: "in-person", city: "Varies (placed near home)", hours_per_week: 32,
-    tech_needed: 1, grade_min: 11, grade_max: 12, deadline: "Usually late Nov - mid Jan",
-    url: "https://hutton.fisheries.org" }
+// All 75 programs from the spreadsheet, built into the page so it works as one file.
+// To update them: edit the spreadsheet, make a new programs.json with csv-to-json.html,
+// and put it next to this file. If programs.json is there, the app uses it instead.
+const builtInPrograms = [
+  {"name": "Florida State University Young Scholars Program", "category": "other STEM", "cost_usd": 0, "format": "in-person", "city": "Tallahassee", "lat": 30.4419, "lon": -84.2985, "hours_per_week": 40, "tech_needed": 1, "grade_min": 10, "grade_max": 11, "deadline": "2027 not yet posted; 2026 cycle was Feb 15 (expected similar)", "url": "https://ysp.osta.fsu.edu/"},
+  {"name": "UF Student Science Training Program (SSTP)", "category": "other STEM", "cost_usd": 5500, "format": "in-person", "city": "Gainesville", "lat": 29.6436, "lon": -82.3549, "hours_per_week": 40, "tech_needed": 1, "grade_min": 11, "grade_max": 11, "deadline": "2027 not yet posted; 2026 applications were due Mar 18, 2026 (rolling review until full)", "url": "https://cpet.ufl.edu/students/uf-cpet-summer-programs/student-science-training-program/"},
+  {"name": "University of Florida (CPET) Summer Programs", "category": "other STEM", "cost_usd": 725, "format": "hybrid", "city": "Gainesville", "lat": 29.6436, "lon": -82.3549, "hours_per_week": 40, "tech_needed": 1, "grade_min": 9, "grade_max": 12, "deadline": "2027 not yet posted; 2026 cycle opened Jan 5 and closed Feb 25 - Apr 3 depending on camp", "url": "https://cpet.ufl.edu/students/summer-programs/"},
+  {"name": "NASA Pathways Internship", "category": "engineering", "cost_usd": 0, "format": "in-person", "city": "Merritt Island (KSC)", "lat": 28.5721, "lon": -80.648, "hours_per_week": 20, "tech_needed": 1, "grade_min": 10, "grade_max": 12, "deadline": "Rolling USAJOBS announcements that stay open only days; check usajobs.gov this fall for Spring/Summer 2027 windows", "url": "https://www.nasa.gov/careers/pathways"},
+  {"name": "NASA OSTEM High School Internships", "category": "engineering", "cost_usd": 0, "format": "hybrid", "city": "Varies by NASA center", "hours_per_week": 20, "tech_needed": 2, "grade_min": 10, "grade_max": 12, "deadline": "Summer 2027: Feb 26, 2027; Fall 2027: May 21, 2027 (per Extern listing)", "url": "https://intern.nasa.gov/"},
+  {"name": "Florida Institute of Technology Pre-College STEM Pathway Program", "category": "other STEM", "cost_usd": 300, "format": "hybrid", "city": "Melbourne", "lat": 28.0653, "lon": -80.6233, "hours_per_week": 6, "tech_needed": 2, "grade_min": 9, "grade_max": 12, "deadline": "2027 not yet posted (registration is per course)", "url": "https://www.fit.edu/"},
+  {"name": "Florida Gulf Coast University STEM Academy", "category": "other STEM", "format": "in-person", "city": "Fort Myers", "lat": 26.4631, "lon": -81.7732, "hours_per_week": 40, "tech_needed": 1, "grade_min": 9, "grade_max": 11, "deadline": "Unknown", "url": "https://www.fgcu.edu/"},
+  {"name": "UCF Health Leaders Summer Academy", "category": "biomedical", "cost_usd": 450, "format": "in-person", "city": "Orlando", "lat": 28.367, "lon": -81.269, "hours_per_week": 40, "tech_needed": 1, "grade_min": 9, "grade_max": 11, "deadline": "2027 not yet posted; 2025 applications opened March 1 for July 14-18 session", "url": "https://med.ucf.edu/office-abce/pathway-programs"},
+  {"name": "Florida Public Health Scholars", "category": "biomedical", "format": "in-person", "tech_needed": 1},
+  {"name": "UCF PREM High School Summer Internship (CQ-MIEE)", "category": "other STEM", "cost_usd": 0, "format": "in-person", "city": "Orlando", "lat": 28.6024, "lon": -81.2001, "hours_per_week": 35, "tech_needed": 1, "grade_min": 11, "grade_max": 12, "deadline": "2027 not yet posted; 2026 deadline was May 1, 2026", "url": "https://prem2.cecs.ucf.edu/hs-summer-internship/"},
+  {"name": "UCF Engineering and Computer Science Summer Programs", "category": "computer science", "format": "in-person", "city": "Orlando", "lat": 28.6024, "lon": -81.2001, "tech_needed": 1, "deadline": "Unknown; registration usually opens in winter", "url": "https://www.cecs.ucf.edu"},
+  {"name": "UCF Robotics and Space Science Programs", "category": "engineering", "format": "in-person", "city": "Orlando", "lat": 28.6024, "lon": -81.2001, "tech_needed": 1, "deadline": "Unknown; registration usually opens in winter", "url": "https://www.ucf.edu"},
+  {"name": "Orlando Health Teen Volunteer Program", "category": "biomedical", "cost_usd": 0, "format": "in-person", "city": "Orlando", "lat": 28.5242, "lon": -81.3736, "hours_per_week": 4, "tech_needed": 1, "grade_min": 10, "grade_max": 12, "deadline": "Summer session (Jun-Aug): apply by Mar 15; Fall: Jul 15; Spring: Oct 15", "url": "https://www.orlandohealth.com/volunteer-services/orlando-regional-medical-center-volunteer-services/ormc-teen-volunteer-opportunities"},
+  {"name": "AdventHealth Teen Volunteering", "category": "biomedical", "cost_usd": 0, "format": "in-person", "city": "Orlando", "lat": 28.5728, "lon": -81.3665, "hours_per_week": 4, "tech_needed": 1, "deadline": "Rolling; confirm summer window with volunteer services", "url": "https://www.adventhealth.com"},
+  {"name": "Orlando Science Center Catalyst Youth Volunteer Program", "category": "other STEM", "cost_usd": 0, "format": "in-person", "city": "Orlando", "lat": 28.5726, "lon": -81.3677, "hours_per_week": 4, "tech_needed": 1, "grade_min": 8, "grade_max": 12, "deadline": "Applications open twice a year (summer season and school-year season)", "url": "https://www.osc.org/support/volunteer/"},
+  {"name": "Orlando Science Center Teen Camp Counselors", "category": "other STEM", "cost_usd": 0, "format": "in-person", "city": "Orlando", "lat": 28.5726, "lon": -81.3677, "hours_per_week": 35, "tech_needed": 1, "deadline": "Unknown; likely spring applications", "url": "https://www.osc.org"},
+  {"name": "STEM Discovery Center at the Orlando Science Center", "category": "other STEM", "format": "in-person", "city": "Orlando", "lat": 28.5726, "lon": -81.3677, "tech_needed": 1, "url": "https://www.osc.org"},
+  {"name": "Lake Apopka Natural Gas District Paid Summer Internship", "category": "other STEM", "cost_usd": 0, "format": "in-person", "city": "Winter Garden", "lat": 28.5653, "lon": -81.5862, "tech_needed": 1, "grade_min": 9, "grade_max": 12, "deadline": "Unknown", "url": "https://theapopkachief.com/gas-district-now-accepting-applications-for-scholarships-internships/"},
+  {"name": "Florida Polytechnic University Phoenix STEM Academy", "category": "other STEM", "cost_usd": 550, "format": "in-person", "city": "Lakeland", "lat": 28.1494, "lon": -81.8477, "hours_per_week": 30, "tech_needed": 1, "grade_min": 9, "grade_max": 12, "deadline": "2027 not yet posted; 2026 high school session started June 8", "url": "https://floridapoly.edu/"},
+  {"name": "Lockheed Martin Space High School Internship", "category": "engineering", "cost_usd": 0, "format": "in-person", "city": "Cape Canaveral", "lat": 28.6122, "lon": -80.8076, "hours_per_week": 40, "tech_needed": 1, "grade_min": 10, "grade_max": 11, "deadline": "Usually opens early Nov, closes mid-Dec (Summer 2026: Nov 3 - Dec 19, 2025)", "url": "https://www.lockheedmartin.com/en-us/careers/students-early-careers.html"},
+  {"name": "L3Harris Technologies High School Internship & Talent Community", "category": "engineering", "cost_usd": 0, "format": "in-person", "city": "Melbourne", "lat": 28.0836, "lon": -80.6081, "tech_needed": 1, "deadline": "Rolling postings; check careers site in winter for summer 2027", "url": "https://www.l3harris.com/careers"},
+  {"name": "Siemens Energy Early Career Finance & Engineering Networks", "category": "engineering", "format": "in-person", "city": "Orlando", "lat": 28.5967, "lon": -81.2123, "tech_needed": 1, "deadline": "Rolling postings; confirm", "url": "https://www.siemens-energy.com/us/en/home/careers.html"},
+  {"name": "United Launch Alliance Summer Internship Track", "category": "engineering", "format": "in-person", "city": "Cape Canaveral", "lat": 28.4889, "lon": -80.5778, "tech_needed": 1, "deadline": "Rolling postings; confirm", "url": "https://www.ulalaunch.com"},
+  {"name": "Collins Aerospace (RTX) High School Programs", "category": "engineering", "format": "in-person", "city": "Melbourne", "lat": 28.0653, "lon": -80.6233, "tech_needed": 1, "deadline": "Unknown", "url": "https://www.collinsaerospace.com"},
+  {"name": "Hubbs-SeaWorld Research Institute Volunteer Program", "category": "environmental", "format": "in-person", "lon": -81.461, "tech_needed": 1, "url": "https://hubbs.org"},
+  {"name": "Nemours Children's Health High School Volunteer", "category": "biomedical", "cost_usd": 0, "format": "in-person", "city": "Orlando", "lat": 28.3753, "lon": -81.2706, "tech_needed": 1, "deadline": "Rolling; confirm", "url": "https://www.nemours.org"},
+  {"name": "Altamonte Springs High School Summer Internship Program", "category": "other STEM", "format": "in-person", "city": "Altamonte Springs", "lat": 28.6611, "lon": -81.3656, "tech_needed": 1, "deadline": "Unknown; typically spring", "url": "https://www.altamonte.org"},
+  {"name": "Gillespie Museum High School Volunteer Program", "category": "other STEM", "cost_usd": 0, "format": "in-person", "city": "DeLand", "lat": 29.0349, "lon": -81.301, "tech_needed": 1, "deadline": "Rolling", "url": "https://www.stetson.edu"},
+  {"name": "Embry-Riddle Aeronautical University Summer Discovery Programs", "category": "engineering", "format": "in-person", "city": "Daytona Beach", "lat": 29.1887, "lon": -81.048, "tech_needed": 1, "deadline": "Unknown; registration usually opens in winter", "url": "https://daytonabeach.erau.edu"},
+  {"name": "Moffitt Cancer Center High School Research Experience", "category": "biomedical", "cost_usd": 0, "format": "in-person", "city": "Tampa", "lat": 28.0636, "lon": -82.4235, "hours_per_week": 30, "tech_needed": 1, "grade_min": 10, "grade_max": 12, "deadline": "Varies by program (HIP IMO listing says Feb 1, year unconfirmed); contact ret@moffitt.org", "url": "https://www.moffitt.org/education/research-education-and-training/pre-college-programs/"},
+  {"name": "Moffitt HIP IMO (Integrated Mathematical Oncology) Internship", "category": "math", "cost_usd": 0, "format": "in-person", "city": "Tampa", "lat": 28.0636, "lon": -82.4235, "tech_needed": 1, "grade_min": 10, "grade_max": 11, "deadline": "Feb 1 (per third-party listing; year not confirmed)", "url": "https://www.moffitt.org/"},
+  {"name": "USF Health Programs", "category": "biomedical", "format": "in-person", "city": "Tampa", "lat": 28.0636, "lon": -82.4235, "tech_needed": 1, "deadline": "Unknown", "url": "https://health.usf.edu"},
+  {"name": "Johns Hopkins All Children's Hospital High School Program", "category": "biomedical", "format": "in-person", "city": "St. Petersburg", "lat": 27.7629, "lon": -82.642, "tech_needed": 1, "deadline": "Unknown", "url": "https://www.hopkinsallchildrens.org"},
+  {"name": "Tampa Bay Watch Junior Scientist & Environmental Volunteering", "category": "environmental", "cost_usd": 0, "format": "in-person", "city": "Tierra Verde", "lat": 27.69, "lon": -82.724, "tech_needed": 1, "deadline": "Rolling", "url": "https://tampabaywatch.org"},
+  {"name": "Mote Marine Laboratory High School Volunteer Programs", "category": "environmental", "cost_usd": 0, "format": "in-person", "city": "Sarasota", "lat": 27.3358, "lon": -82.5547, "hours_per_week": 4, "tech_needed": 1, "grade_min": 10, "grade_max": 12, "deadline": "Summer program applications open mid-February", "url": "https://mote.org"},
+  {"name": "Mayo Clinic SPARK Research Mentorship Program", "category": "biomedical", "cost_usd": 0, "format": "in-person", "city": "Jacksonville", "lat": 30.264, "lon": -81.443, "hours_per_week": 25, "tech_needed": 1, "grade_min": 10, "grade_max": 11, "deadline": "Applications accepted Nov 1 - Dec 31 each year (confirm exact year)", "url": "https://college.mayo.edu/academics/non-clinical-education/science-program-for-the-advancement-of-research-knowledge-spark-florida/"},
+  {"name": "National High Magnetic Field Laboratory High School Programs", "category": "other STEM", "format": "in-person", "city": "Tallahassee", "lat": 30.4256, "lon": -84.324, "tech_needed": 1, "url": "https://nationalmaglab.org"},
+  {"name": "FAMU Summer STEM Academy", "category": "other STEM", "format": "in-person", "city": "Tallahassee", "lat": 30.4255, "lon": -84.285, "tech_needed": 1, "deadline": "Unknown", "url": "https://www.famu.edu"},
+  {"name": "FAMU-FSU College of Engineering Summer Programs", "category": "engineering", "format": "in-person", "city": "Tallahassee", "lat": 30.427, "lon": -84.324, "tech_needed": 1, "deadline": "Unknown", "url": "https://eng.famu.fsu.edu"},
+  {"name": "FSU Coastal & Marine Lab Saturday-at-the-Sea", "category": "environmental", "format": "in-person", "city": "St. Teresa", "lat": 29.916, "lon": -84.517, "tech_needed": 1, "deadline": "Unknown; seasonal event dates", "url": "https://marinelab.fsu.edu"},
+  {"name": "UF Health Cancer Center High School Summer Research Program", "category": "biomedical", "format": "in-person", "city": "Gainesville", "lat": 29.64, "lon": -82.344, "tech_needed": 1, "deadline": "Unknown; typically winter-spring", "url": "https://cancer.ufl.edu"},
+  {"name": "UF Herbert Wertheim College of Engineering Summer Camps", "category": "engineering", "format": "in-person", "city": "Gainesville", "lat": 29.6436, "lon": -82.3549, "tech_needed": 1, "deadline": "Unknown; registration usually opens in winter", "url": "https://www.eng.ufl.edu"},
+  {"name": "UNF Summer STEM Camps", "category": "other STEM", "format": "in-person", "city": "Jacksonville", "lat": 30.2696, "lon": -81.51, "tech_needed": 1, "deadline": "Unknown", "url": "https://www.unf.edu"},
+  {"name": "Howard T. Odum Florida Springs Institute Volunteering", "category": "environmental", "cost_usd": 0, "format": "in-person", "city": "High Springs", "lat": 29.8269, "lon": -82.5944, "tech_needed": 1, "deadline": "Rolling", "url": "https://floridaspringsinstitute.org"},
+  {"name": "Max Planck Florida Institute for Neuroscience Summer Research Internship", "category": "biomedical", "cost_usd": 0, "format": "in-person", "city": "Jupiter", "lat": 26.8936, "lon": -80.1137, "hours_per_week": 40, "tech_needed": 1, "grade_min": 11, "grade_max": 12, "deadline": "Not found", "url": "https://mpfi.org/"},
+  {"name": "UF Scripps Kenan Fellows High School Program", "category": "biomedical", "cost_usd": 0, "format": "in-person", "city": "Jupiter", "lat": 26.894, "lon": -80.114, "hours_per_week": 40, "tech_needed": 1, "grade_min": 10, "grade_max": 11, "deadline": "Not found", "url": "https://wertheim.scripps.ufl.edu/education/kenan-fellows-high-school-summer-internships/"},
+  {"name": "Loggerhead Marinelife Center Ocean Scholars & High School Internships", "category": "environmental", "cost_usd": 0, "format": "in-person", "city": "Juno Beach", "lat": 26.8856, "lon": -80.0556, "hours_per_week": 40, "tech_needed": 1, "grade_min": 9, "grade_max": 12, "deadline": "Unknown for 2027; summer cohorts usually open in spring", "url": "https://marinelife.org/ocean-scholars/"},
+  {"name": "FAU Brain Institute Programs", "category": "biomedical", "format": "in-person", "city": "Jupiter", "lat": 26.889, "lon": -80.112, "tech_needed": 1, "deadline": "Unknown", "url": "https://www.fau.edu"},
+  {"name": "FAU High School Summer STEM Programs", "category": "other STEM", "format": "in-person", "city": "Boca Raton", "lat": 26.3705, "lon": -80.101, "tech_needed": 1, "deadline": "Unknown", "url": "https://www.fau.edu"},
+  {"name": "FAU Harbor Branch Oceanographic Institute", "category": "environmental", "format": "in-person", "city": "Fort Pierce", "lat": 27.5355, "lon": -80.351, "tech_needed": 1, "deadline": "Unknown", "url": "https://www.fau.edu/hboi"},
+  {"name": "FIU Center for Translational Science High School Summer Internship", "category": "biomedical", "cost_usd": 0, "format": "in-person", "city": "Port St. Lucie", "lat": 27.27, "lon": -80.43, "hours_per_week": 40, "tech_needed": 1, "grade_min": 11, "grade_max": 12, "deadline": "Information goes out through St. Lucie schools by March", "url": "https://cts.fiu.edu/education/high-school-summer-internship-program/"},
+  {"name": "University of Miami JJ Vance Memorial Summer Internship", "category": "biomedical", "cost_usd": 0, "format": "in-person", "city": "Miami", "lat": 25.7907, "lon": -80.2113, "hours_per_week": 40, "tech_needed": 1, "grade_min": 11, "grade_max": 11, "deadline": "Not found; check HIHG page (typically winter/spring)", "url": "https://med.miami.edu/centers-and-institutes/hihg/education-and-training/division-of-genomic-education/educational-programs/jj-vance-memorial-summer-internship"},
+  {"name": "Sylvester Comprehensive Cancer Center High School Programs", "category": "biomedical", "format": "in-person", "city": "Miami", "lat": 25.7896, "lon": -80.2123, "tech_needed": 1, "deadline": "Unknown", "url": "https://www.sylvester.org"},
+  {"name": "Baptist Health South Florida High School Clinical Shadowing", "category": "biomedical", "format": "in-person", "city": "Miami", "lat": 25.7064, "lon": -80.2889, "tech_needed": 1, "deadline": "Unknown; rolling", "url": "https://baptisthealth.net"},
+  {"name": "Nicklaus Children's Hospital High School Volunteer Program", "category": "biomedical", "cost_usd": 0, "format": "in-person", "city": "Miami", "lat": 25.7406, "lon": -80.2994, "tech_needed": 1, "deadline": "Unknown; typically spring for summer", "url": "https://www.nicklauschildrens.org"},
+  {"name": "Miami-Dade County Summer Youth Internship Program", "category": "other STEM", "format": "in-person", "city": "Miami", "lat": 25.7743, "lon": -80.1953, "tech_needed": 1, "deadline": "Unknown; typically winter-spring", "url": "https://www.miamidade.gov"},
+  {"name": "Frost Science Museum Youth Ambassadors for Education", "category": "other STEM", "format": "in-person", "city": "Miami", "lat": 25.7858, "lon": -80.1866, "tech_needed": 1, "deadline": "Unknown", "url": "https://www.frostscience.org"},
+  {"name": "Frost Science Museum Volunteers for the Environment", "category": "environmental", "format": "in-person", "city": "Miami", "lat": 25.7858, "lon": -80.1866, "tech_needed": 1, "deadline": "Unknown", "url": "https://www.frostscience.org"},
+  {"name": "Everglades Foundation EcoExplorers Program", "category": "environmental", "format": "in-person", "city": "Palmetto Bay", "lat": 25.62, "lon": -80.3011, "tech_needed": 1, "deadline": "Unknown", "url": "https://www.evergladesfoundation.org"},
+  {"name": "Museum of Discovery and Science (MODS) Teen Volunteer Program", "category": "other STEM", "cost_usd": 0, "format": "in-person", "city": "Fort Lauderdale", "lat": 26.1197, "lon": -80.1463, "tech_needed": 1, "deadline": "Unknown", "url": "https://mods.org"},
+  {"name": "Cox Science Center and Aquarium Teen Volunteer Program", "category": "other STEM", "cost_usd": 0, "format": "in-person", "city": "West Palm Beach", "lat": 26.678, "lon": -80.0534, "tech_needed": 1, "deadline": "Unknown", "url": "https://coxsciencecenter.org"},
+  {"name": "Army Educational Outreach Program High School Apprenticeships", "category": "other STEM", "cost_usd": 0, "format": "in-person", "city": "Varies by lab", "hours_per_week": 38, "tech_needed": 1, "grade_min": 11, "grade_max": 11, "deadline": "2027 not yet posted; applications historically open after New Year and close Feb-Mar", "url": "https://www.usaeop.com/"},
+  {"name": "Naval Science and Engineering Apprenticeship (SEAP)", "category": "engineering", "cost_usd": 0, "format": "in-person", "city": "Varies by lab", "hours_per_week": 40, "tech_needed": 1, "grade_min": 9, "grade_max": 12, "deadline": "Nov 1, 2026 (window Aug 1 - Nov 1 each year)", "url": "https://navalsteminterns.us/seap"},
+  {"name": "Hutton Junior Fisheries Biology Program", "category": "environmental", "cost_usd": 0, "format": "in-person", "city": "Varies (placed near home)", "hours_per_week": 32, "tech_needed": 1, "grade_min": 11, "grade_max": 12, "deadline": "Usually opens late Nov and closes mid/late Jan; 2027 not confirmed", "url": "https://hutton.fisheries.org"},
+  {"name": "Girls Who Code Summer Programs", "category": "computer science", "cost_usd": 0, "format": "virtual", "hours_per_week": 20, "tech_needed": 2, "grade_min": 9, "grade_max": 11, "deadline": "2026: early deadline Feb 25, general Apr 10; 2027 not posted", "url": "https://girlswhocode.com"},
+  {"name": "Johns Hopkins Global Health Leaders Conference", "category": "biomedical", "cost_usd": 99, "format": "virtual", "hours_per_week": 6, "tech_needed": 2, "deadline": "Unknown; check site in spring", "url": "https://globalhealth.jhu.edu/the-global-health-leaders-conference-glohea"},
+  {"name": "Florida Virtual School Classes (Live and Flex)", "category": "other STEM", "cost_usd": 0, "format": "virtual", "hours_per_week": 5, "tech_needed": 2, "grade_min": 9, "grade_max": 12, "deadline": "Rolling; registration per term", "url": "https://www.flvs.net"},
+  {"name": "Technology Student Association Florida", "category": "engineering", "format": "in-person", "city": "Varies (school chapters)", "tech_needed": 1, "grade_min": 9, "grade_max": 12, "deadline": "State conference typically in spring; chapter sign-up through school", "url": "https://www.floridatsa.org"},
+  {"name": "Amazon Future Engineer Scholarship", "category": "computer science", "cost_usd": 0, "format": "virtual", "hours_per_week": 0, "tech_needed": 2, "grade_min": 12, "grade_max": 12, "deadline": "Varies yearly", "url": "https://www.amazonfutureengineer.com"},
+  {"name": "UF IFAS Extension Youth Leadership (4-H)", "category": "other STEM", "format": "in-person", "city": "Varies by county", "tech_needed": 1, "grade_min": 9, "grade_max": 12, "deadline": "Varies by county", "url": "https://extension.ufl.edu"},
+  {"name": "Florida Fish and Wildlife Conservation Commission Youth Conservation Programs", "category": "environmental", "format": "in-person", "city": "Varies (statewide)", "tech_needed": 1, "deadline": "Varies by program", "url": "https://myfwc.com"},
+  {"name": "Florida Public Archaeology Network Lab Volunteering", "category": "other STEM", "format": "in-person", "city": "Varies (regional centers)", "tech_needed": 1, "deadline": "Rolling", "url": "https://fpan.us"},
+  {"name": "FL STEM Scholars", "category": "other STEM", "format": "in-person", "tech_needed": 1},
+  {"name": "EnergyMag Virtual Internship in Renewable Energy", "category": "engineering", "format": "virtual", "tech_needed": 2},
+  {"name": "Code/Art Student Board & Mentorship Tracks", "category": "computer science", "format": "in-person", "tech_needed": 1}
 ];
 
 // The example student (also used for the Reset button)
@@ -258,7 +293,6 @@ const defaultStudent = { cats: ["biomedical"], grade: 10, county: "Lake", myLat:
 const form = byId("f");
 let student = loadStudent();   // the answers from the form
 let programs = [];             // every program, cleaned up by cleanProgram()
-let checkedWhatIfs = [];       // keys of the "What if" boxes that are checked
 let loadedFromFile = false;
 
 
@@ -428,19 +462,6 @@ function calculateScore(s) {
   return { matches: matches, parts: parts, total: total };
 }
 
-// Returns a copy of the student with one "What if" change made
-function applyWhatIf(s, key) {
-  const copy = { ...s };
-  if (key === "car") {
-    copy.car = true;
-    copy.miles = Math.max(s.miles, 30);
-  }
-  if (key === "laptop") copy.tech = 3;
-  if (key === "time") copy.hours = Math.min(s.hours + 10, 40);
-  if (key === "money") copy.budget = Math.max(s.budget, 500);
-  return copy;
-}
-
 
 // ===================== SHOWING THINGS ON THE PAGE =====================
 
@@ -509,28 +530,8 @@ function render() {
   const result = calculateScore(student);
   const score = result.total;
 
-  // score if all the checked "What if" changes happened
-  let changedStudent = student;
-  for (const key of checkedWhatIfs) {
-    changedStudent = applyWhatIf(changedStudent, key);
-  }
-  const newScore = calculateScore(changedStudent).total;
-  const change = percent(newScore) - percent(score);
-
-  // which single "What if" would help the most
-  let best = null;
-  let bestGain = 0;
-  for (const w of whatIfs) {
-    const gain = calculateScore(applyWhatIf(student, w.key)).total - score;
-    if (best === null || gain > bestGain) {
-      best = w;
-      bestGain = gain;
-    }
-  }
-
   // build one row per matching program, then sort: fewest barriers first
   const rows = [];
-  let noBarrierCount = 0;
   for (const program of result.matches) {
     const row = {
       program: program,
@@ -538,7 +539,6 @@ function render() {
       unknowns: getUnknowns(program, student),
       distance: needsTravel(program) ? getDistance(program, student) : null
     };
-    if (row.barriers.length === 0) noBarrierCount++;
     rows.push(row);
   }
   rows.sort(function (a, b) {
@@ -550,14 +550,6 @@ function render() {
     return (a.distance || 0) - (b.distance || 0);
   });
 
-  // programs that match the interests but not the student's grade
-  let hiddenCount = 0;
-  for (const program of programs) {
-    if (student.cats.includes(program.category) && !isEligible(program, student)) {
-      hiddenCount++;
-    }
-  }
-
   // --- labels next to the sliders ---
   byId("mo").textContent = travelLimit(student) + " miles" +
     (student.car ? "" : " (bus, bike or walking)");
@@ -567,7 +559,6 @@ function render() {
   // --- score circle ---
   byId("gnum").textContent = percent(score) + "%";
   byId("arc").style.strokeDashoffset = CIRCLE * (1 - score);
-  byId("arc2").style.strokeDashoffset = CIRCLE * (1 - Math.max(newScore, score));
 
   // --- score bars ---
   let barsHTML = "";
@@ -583,35 +574,13 @@ function render() {
   }
   byId("bars").innerHTML = barsHTML;
 
-  // --- message under the score ---
-  if (student.cats.length === 0) {
-    byId("msg").textContent = "Pick at least one interest to see programs.";
-  } else {
-    let message = "Your Access Score is " + percent(score) + "%. " + result.matches.length +
-      " programs match your interests and grade, and " + noBarrierCount +
-      (noBarrierCount === 1 ? " has" : " have") + " no barriers for you.";
-    if (hiddenCount > 0) message += " " + hiddenCount + " more aren't open to your grade.";
-    byId("msg").textContent = message;
-  }
-
-  // --- What if section ---
-  if (checkedWhatIfs.length > 0) {
-    byId("wi").textContent = percent(score) + "% -> " + percent(newScore) + "% (" +
-      (change >= 0 ? "+" : "") + change + " pts)";
-  } else {
-    byId("wi").textContent = "Check a box to see the change.";
-  }
-  if (result.matches.length > 0 && bestGain > 0.005) {
-    byId("big").textContent = "Biggest barrier: having " + best.text + " would raise your" +
-      " score the most (+" + (percent(score + bestGain) - percent(score)) + " pts).";
-  } else {
-    byId("big").textContent = "";
-  }
-
   // --- program list ---
   let listHTML = "";
   for (const row of rows) {
     listHTML += programHTML(row);
+  }
+  if (student.cats.length === 0) {
+    listHTML = '<li class="meta">Pick at least one interest to see programs.</li>';
   }
   byId("list").innerHTML = listHTML;
   drawMap(rows);
@@ -619,8 +588,7 @@ function render() {
   if (loadedFromFile) {
     byId("src").textContent = programs.length + " programs loaded from programs.json.";
   } else {
-    byId("src").textContent = "Showing 6 sample programs. Put programs.json in this folder" +
-      " and open the page with Live Server to load your full list.";
+    byId("src").textContent = programs.length + " programs (built into this page).";
   }
 }
 
@@ -797,24 +765,9 @@ for (const cat of categories) {
 }
 byId("cats").innerHTML = catsHTML;
 
-let whatIfHTML = "";
-for (const w of whatIfs) {
-  whatIfHTML += '<label class="chk"><input type="checkbox" value="' + w.key +
-    '"> What if I had ' + w.text + "</label>";
-}
-byId("wif").innerHTML = whatIfHTML;
-
 // listen for changes
 form.addEventListener("input", readForm);
 form.addEventListener("change", readForm);
-
-byId("wif").addEventListener("change", function () {
-  checkedWhatIfs = [];
-  for (const box of byId("wif").querySelectorAll("input")) {
-    if (box.checked) checkedWhatIfs.push(box.value);
-  }
-  render();
-});
 
 byId("geo").addEventListener("click", function () {
   if (!navigator.geolocation) {
@@ -834,18 +787,14 @@ byId("geo").addEventListener("click", function () {
 
 byId("ex").addEventListener("click", function () {
   student = { ...defaultStudent };
-  checkedWhatIfs = [];
-  for (const box of byId("wif").querySelectorAll("input")) {
-    box.checked = false;
-  }
   saveStudent();
   fillForm();
   render();
 });
 
-// show the sample programs first, then try to load the real list
+// show the built-in programs, then check for a newer programs.json
 setupMap();
-for (const row of samplePrograms) {
+for (const row of builtInPrograms) {
   programs.push(cleanProgram(row));
 }
 fillForm();
@@ -865,7 +814,7 @@ fetch("programs.json")
     render();
   })
   .catch(function () {
-    // keep showing the sample programs
+    // no programs.json, so keep the built-in list
   });
 </script>
 </body>
